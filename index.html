@@ -113,6 +113,48 @@
   .btn:disabled{ opacity:.5; cursor:not-allowed; }
   .btn-row{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:6px;}
 
+  .name-input{
+    width:100%; max-width:320px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px 16px;
+    color:var(--cream);
+    font-family:var(--font-body);
+    font-size:14px;
+    margin-bottom:14px;
+    text-align:center;
+  }
+  .name-input::placeholder{ color:rgba(247,243,234,0.4); }
+  .name-input:focus{ outline:2px solid var(--yellow); }
+
+  .challenge-banner{
+    width:100%; max-width:360px;
+    background: linear-gradient(135deg, rgba(255,217,102,0.14), rgba(255,107,91,0.10));
+    border:1px solid rgba(255,217,102,0.35);
+    border-radius:16px;
+    padding:14px 18px;
+    text-align:center;
+    margin-bottom:16px;
+  }
+  .challenge-banner-name{
+    font-family:var(--font-display);
+    color:var(--yellow);
+    font-size:15px;
+    margin-bottom:2px;
+  }
+  .challenge-banner-detail{
+    font-size:13px;
+    color:rgba(247,243,234,0.75);
+  }
+
+  .compare-line{
+    font-size:13.5px;
+    text-align:center;
+    margin:-4px 0 12px;
+    color:var(--yellow);
+  }
+
   .privacy{
     display:flex; align-items:center; gap:8px;
     font-size:12.5px; color:rgba(247,243,234,0.55);
@@ -239,6 +281,12 @@
       </svg>
     </div>
 
+    <div class="challenge-banner" id="challenge-banner" style="display:none;">
+      <div class="challenge-banner-name" id="challenge-banner-name"></div>
+      <div class="challenge-banner-detail" id="challenge-banner-detail"></div>
+    </div>
+
+    <input type="text" id="player-name" class="name-input" placeholder="Your name (for the share card)" maxlength="18">
     <button class="btn" id="btn-start">Wake Up Yorick</button>
     <div class="privacy">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -291,6 +339,7 @@
     <div class="result-badge win">🏆</div>
     <div class="result-title">You held it in!</div>
     <p class="result-sub">Yorick is impressed. Barely.</p>
+    <div class="compare-line" id="win-compare-line" style="display:none;"></div>
     <div class="stat-card">
       <div class="stat-big" id="win-time">15.0s</div>
       <div class="stat-caption">Survived without yawning</div>
@@ -302,7 +351,7 @@
     </div>
     <div class="btn-row">
       <button class="btn win" id="btn-next-level">Next Level →</button>
-      <button class="btn secondary" id="btn-share-win">Share Result</button>
+      <button class="btn secondary" id="btn-share-win">Challenge a Friend</button>
     </div>
   </div>
 
@@ -311,6 +360,7 @@
     <div class="result-badge lose">😮</div>
     <div class="result-title">Caught you!</div>
     <p class="result-sub">Yorick got you in <span id="lose-time">0.0s</span>. Rude.</p>
+    <div class="compare-line" id="lose-compare-line" style="display:none;"></div>
     <div class="stat-card">
       <div class="stat-big" id="lose-time-big">0.0s</div>
       <div class="stat-caption">Time before the yawn hit</div>
@@ -321,7 +371,7 @@
     </div>
     <div class="btn-row">
       <button class="btn lose" id="btn-retry">Try Again</button>
-      <button class="btn secondary" id="btn-share-lose">Share Fail</button>
+      <button class="btn secondary" id="btn-share-lose">Challenge a Friend</button>
     </div>
   </div>
 
@@ -351,6 +401,7 @@
   let modelsReady = false;
   let openFrameCount = 0;
   let roundActive = false;
+  let activeChallenge = null; // { name, levelIndex, time }
 
   // ---------- Screen helpers ----------
   function showScreen(id){
@@ -488,6 +539,7 @@
       document.getElementById("win-level").textContent = currentLevelIndex + 1;
       document.getElementById("win-streak").textContent = stats.winStreak;
       document.getElementById("win-best").textContent = stats.bestTime.toFixed(1) + "s";
+      showComparisonIfAny(true, elapsedSec);
       showScreen("screen-win");
       launchConfetti();
     } else {
@@ -500,6 +552,7 @@
       document.getElementById("lose-time-big").textContent = elapsedSec.toFixed(1) + "s";
       document.getElementById("lose-attempts").textContent = stats.attempts;
       document.getElementById("lose-best").textContent = stats.bestTime.toFixed(1) + "s";
+      showComparisonIfAny(false, elapsedSec);
       showScreen("screen-lose");
     }
   }
@@ -546,23 +599,79 @@
     tick();
   }
 
-  // ---------- Share ----------
-  function buildShareText(won, timeStr, levelNum){
-    if(won){
-      return `I just survived ${timeStr} without yawning on Level ${levelNum} of Try Not To Yawn 😤 Think you can beat Yorick?`;
+  // ---------- Challenge links ----------
+  function encodeChallenge(name, levelIndex, time){
+    const payload = { n: name.slice(0,18), l: levelIndex, t: Math.round(time*10)/10 };
+    return btoa(encodeURIComponent(JSON.stringify(payload)));
+  }
+  function decodeChallenge(str){
+    try{
+      const payload = JSON.parse(decodeURIComponent(atob(str)));
+      if(typeof payload.l !== "number" || typeof payload.t !== "number") return null;
+      return { name: payload.n || "A friend", levelIndex: Math.max(0, Math.min(LEVELS.length-1, payload.l)), time: payload.t };
+    }catch(e){ return null; }
+  }
+  function buildChallengeUrl(name, levelIndex, time){
+    const base = window.location.origin + window.location.pathname;
+    return base + "?c=" + encodeChallenge(name, levelIndex, time);
+  }
+  function checkIncomingChallenge(){
+    const params = new URLSearchParams(window.location.search);
+    const c = params.get("c");
+    if(!c) return;
+    const parsed = decodeChallenge(c);
+    if(!parsed) return;
+    activeChallenge = parsed;
+    const banner = document.getElementById("challenge-banner");
+    document.getElementById("challenge-banner-name").textContent = parsed.name + "'s Challenge";
+    document.getElementById("challenge-banner-detail").textContent =
+      "Survived " + parsed.time.toFixed(1) + "s on Level " + (parsed.levelIndex+1) + ". Think you can beat them?";
+    banner.style.display = "block";
+    document.getElementById("btn-start").textContent = "Accept the Challenge";
+  }
+
+  function showComparisonIfAny(won, elapsedSec){
+    if(!activeChallenge) return;
+    const lineId = won ? "win-compare-line" : "lose-compare-line";
+    const el = document.getElementById(lineId);
+    const yourTime = won ? LEVELS[currentLevelIndex].time : elapsedSec;
+    if(currentLevelIndex === activeChallenge.levelIndex){
+      if(yourTime > activeChallenge.time){
+        el.textContent = "You beat " + activeChallenge.name + "'s " + activeChallenge.time.toFixed(1) + "s! 🔥";
+      } else if(yourTime < activeChallenge.time){
+        el.textContent = activeChallenge.name + " still leads with " + activeChallenge.time.toFixed(1) + "s.";
+      } else {
+        el.textContent = "Tied with " + activeChallenge.name + "'s " + activeChallenge.time.toFixed(1) + "s!";
+      }
+    } else {
+      el.textContent = "Challenge was for Level " + (activeChallenge.levelIndex+1) + " — try that level to compare with " + activeChallenge.name + ".";
     }
-    return `Yorick caught me yawning in ${timeStr} 😮 Try Not To Yawn and see if you last longer than me.`;
+    el.style.display = "block";
+  }
+
+  // ---------- Share ----------
+  function buildShareText(won, name, timeVal, levelNum, url){
+    if(won){
+      return `${name} just survived ${timeVal.toFixed(1)}s without yawning on Level ${levelNum} of Try Not To Yawn 😤 Think you can beat it? ${url}`;
+    }
+    return `${name} lasted ${timeVal.toFixed(1)}s before yawning on Level ${levelNum} of Try Not To Yawn 😮 Beat their time: ${url}`;
   }
   async function shareResult(won){
-    const timeStr = won ? document.getElementById("win-time").textContent : document.getElementById("lose-time").textContent;
-    const levelNum = document.getElementById(won ? "win-level" : "level-tag").textContent;
-    const text = buildShareText(won, timeStr, levelNum);
+    const nameInput = document.getElementById("player-name").value.trim();
+    const name = nameInput || "A friend";
+    const timeVal = won
+      ? LEVELS[currentLevelIndex].time
+      : parseFloat(document.getElementById("lose-time-big").textContent);
+    const levelNum = currentLevelIndex + 1;
+    const url = buildChallengeUrl(name, currentLevelIndex, timeVal);
+    const text = buildShareText(won, name, timeVal, levelNum, url);
+
     if(navigator.share){
       try{ await navigator.share({ text }); return; }catch(e){ /* fall through to clipboard */ }
     }
     try{
       await navigator.clipboard.writeText(text);
-      alert("Result copied — paste it anywhere to share!");
+      alert("Challenge link copied — send it to a friend!");
     }catch(e){
       alert(text);
     }
@@ -571,17 +680,33 @@
   // ---------- Wiring ----------
   document.getElementById("btn-start").addEventListener("click", async () => {
     showScreen("screen-loading");
+
+    const isSecure = window.isSecureContext;
+    if(!isSecure){
+      document.getElementById("loading-status").textContent =
+        "This page isn't running on HTTPS or localhost, so the browser is blocking camera access. Deploy it (e.g. Vercel) or run it via a local server, then try again.";
+      return;
+    }
+
     try{
       await startCamera();
     }catch(err){
-      document.getElementById("loading-status").textContent = "Camera access is required to play. Please allow camera access and reload.";
+      let msg = "Camera access failed: " + (err && err.name ? err.name : "unknown error") + ".";
+      if(err && err.name === "NotAllowedError"){
+        msg = "Camera permission was denied. Check your browser's site settings (click the padlock icon) and allow camera access, then reload.";
+      } else if(err && err.name === "NotFoundError"){
+        msg = "No camera was found on this device.";
+      } else if(err && err.name === "NotReadableError"){
+        msg = "Another app is already using your camera. Close it and try again.";
+      }
+      document.getElementById("loading-status").textContent = msg;
       return;
     }
     if(!modelsReady){
       const ok = await loadModels();
       if(!ok) return;
     }
-    currentLevelIndex = 0;
+    currentLevelIndex = activeChallenge ? activeChallenge.levelIndex : 0;
     beginRound();
   });
 
@@ -596,6 +721,8 @@
 
   document.getElementById("btn-share-win").addEventListener("click", () => shareResult(true));
   document.getElementById("btn-share-lose").addEventListener("click", () => shareResult(false));
+
+  checkIncomingChallenge();
 
 })();
 </script>
