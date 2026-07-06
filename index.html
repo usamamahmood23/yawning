@@ -67,18 +67,24 @@
   .screen{ width:100%; display:none; flex-direction:column; align-items:center; }
   .screen.active{ display:flex; }
 
-  /* ---- Mascot (Yorick) ---- */
-  .mascot-wrap{ position:relative; width:220px; height:220px; margin:6px 0 10px; }
-  .mascot-wrap svg{ width:100%; height:100%; }
-  #mouth{ transform-origin: 100px 132px; animation: yorick-bait 2.6s ease-in-out infinite; }
-  @keyframes yorick-bait{
-    0%,20%{ transform: scaleY(0.15); }
-    45%{ transform: scaleY(1); }
-    65%{ transform: scaleY(1); }
-    88%,100%{ transform: scaleY(0.15); }
+  /* ---- Mascot (Yorick, real video) ---- */
+  .mascot-wrap{
+    position:relative; width:220px; height:220px; margin:6px 0 10px;
+    border-radius:50%;
+    border:5px solid var(--coral);
+    box-shadow: 0 0 0 6px rgba(255,107,91,0.14), 0 10px 26px rgba(0,0,0,0.35);
+    overflow:hidden;
+    background:#fff;
   }
-  .zzz{ position:absolute; top:-6px; right:6px; font-family:var(--font-display); color:var(--yellow); font-size:20px; opacity:0; animation: floatz 2.6s ease-in-out infinite; }
-  .zzz.two{ right:-10px; top:14px; font-size:14px; animation-delay:.4s; }
+  .mascot-wrap.small{ width:150px; height:150px; margin:0; }
+  .mascot-wrap video{
+    width:100%; height:100%;
+    object-fit:cover;
+    object-position:center 28%;
+    display:block;
+  }
+  .zzz{ position:absolute; top:-2px; right:2px; font-family:var(--font-display); color:var(--yellow); font-size:20px; opacity:0; animation: floatz 2.6s ease-in-out infinite; z-index:2; text-shadow:0 2px 6px rgba(0,0,0,0.5);}
+  .zzz.two{ right:-14px; top:20px; font-size:14px; animation-delay:.4s; }
   @keyframes floatz{
     0%,20%{ opacity:0; transform:translateY(0px);}
     45%{ opacity:1; transform:translateY(-14px);}
@@ -266,19 +272,9 @@
 
     <div class="mascot-wrap">
       <span class="zzz">z</span><span class="zzz two">z</span>
-      <svg viewBox="0 0 200 200">
-        <ellipse cx="100" cy="108" rx="76" ry="70" fill="#2E2E63" stroke="#FFD966" stroke-width="4"/>
-        <circle cx="70" cy="90" r="11" fill="#F7F3EA"/>
-        <circle cx="130" cy="90" r="11" fill="#F7F3EA"/>
-        <circle cx="70" cy="90" r="5" fill="#1B1B3A"/>
-        <circle cx="130" cy="90" r="5" fill="#1B1B3A"/>
-        <g id="mouth">
-          <path d="M 62 118 Q 100 190 138 118 Q 100 132 62 118 Z" fill="#FF6B5B"/>
-          <path d="M 62 118 Q 100 132 138 118" fill="none" stroke="#1B1B3A" stroke-width="3"/>
-        </g>
-        <ellipse cx="55" cy="118" rx="9" ry="6" fill="#FF9E92" opacity="0.7"/>
-        <ellipse cx="145" cy="118" rx="9" ry="6" fill="#FF9E92" opacity="0.7"/>
-      </svg>
+      <video autoplay muted loop playsinline>
+        <source src="yorick-yawn.mp4" type="video/mp4">
+      </video>
     </div>
 
     <div class="challenge-banner" id="challenge-banner" style="display:none;">
@@ -315,19 +311,11 @@
           <div class="meter-track"><div class="meter-fill" id="meter-fill"></div></div>
         </div>
       </div>
-      <div class="mascot-wrap" style="width:150px;height:150px;margin:0;">
+      <div class="mascot-wrap small">
         <span class="zzz">z</span><span class="zzz two">z</span>
-        <svg viewBox="0 0 200 200">
-          <ellipse cx="100" cy="108" rx="76" ry="70" fill="#2E2E63" stroke="#FFD966" stroke-width="4"/>
-          <circle cx="70" cy="90" r="11" fill="#F7F3EA"/>
-          <circle cx="130" cy="90" r="11" fill="#F7F3EA"/>
-          <circle cx="70" cy="90" r="5" fill="#1B1B3A"/>
-          <circle cx="130" cy="90" r="5" fill="#1B1B3A"/>
-          <g id="mouth2">
-            <path d="M 62 118 Q 100 190 138 118 Q 100 132 62 118 Z" fill="#FF6B5B"/>
-            <path d="M 62 118 Q 100 132 138 118" fill="none" stroke="#1B1B3A" stroke-width="3"/>
-          </g>
-        </svg>
+        <video autoplay muted loop playsinline>
+          <source src="yorick-yawn.mp4" type="video/mp4">
+        </video>
       </div>
       <div class="timer">Survive <span id="timer-num">15</span>s</div>
       <div class="status-line" id="status-line">Round starts in 3…</div>
