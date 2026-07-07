@@ -310,19 +310,47 @@
   }
   .chip.active{ background:var(--yellow); color:var(--ink); border-color:var(--yellow); font-weight:600; }
 
-  .winddown-session{
-    display:flex; flex-direction:column; align-items:center; gap:16px;
+  .winddown-session{ display:none; } /* legacy selector kept harmless; real UI is .winddown-fullscreen below */
+
+  .winddown-fullscreen{
+    position:fixed; inset:0; z-index:55; background:#000; display:none;
   }
-  .winddown-video-frame{
-    width:100%; max-width:320px; aspect-ratio:1/1; border-radius:24px; overflow:hidden;
-    border:1px solid var(--line); position:relative; background:#000;
+  .winddown-fullscreen.active{ display:block; }
+  .winddown-fullscreen video{
+    width:100%; height:100%; object-fit:cover; object-position:center 25%; display:block;
   }
-  .winddown-video-frame video{ width:100%; height:100%; object-fit:cover; object-position:center 25%; }
-  .winddown-video-frame .dim{
-    position:absolute; inset:0; background:rgba(27,27,58,0.35);
+  .winddown-fullscreen .wd-dim{
+    position:absolute; inset:0;
+    background:linear-gradient(to bottom, rgba(0,0,0,0.55), rgba(0,0,0,0.1) 35%, rgba(0,0,0,0.15) 60%, rgba(0,0,0,0.7));
   }
-  .winddown-countdown{ font-family:var(--font-display); font-size:44px; color:var(--yellow); }
-  .winddown-sub{ font-size:13px; color:rgba(247,243,234,0.6); text-align:center; }
+  .winddown-fullscreen .wd-top{
+    position:absolute; top:0; left:0; right:0; padding:36px 20px 0; text-align:center;
+  }
+  .winddown-fullscreen .wd-countdown{
+    font-family:var(--font-display); font-size:46px; color:var(--yellow);
+    text-shadow:0 4px 14px rgba(0,0,0,0.6);
+  }
+  .winddown-fullscreen .wd-sub{
+    font-size:13px; color:rgba(247,243,234,0.85); margin-top:6px;
+    text-shadow:0 2px 8px rgba(0,0,0,0.6);
+  }
+  .winddown-fullscreen .wd-stop-btn{
+    position:absolute; bottom:40px; left:50%; transform:translateX(-50%);
+  }
+
+  .sound-mini-bar{
+    position:fixed; bottom:var(--nav-h); left:50%; transform:translateX(-50%);
+    width:100%; max-width:520px;
+    background:var(--panel); border-top:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 18px; z-index:45; font-size:13px;
+  }
+  .mini-stop-btn{
+    background:var(--coral); color:#fff; border:none; border-radius:999px;
+    padding:7px 16px; font-size:12.5px; font-weight:600; cursor:pointer;
+    flex:none;
+  }
+
 
   /* ================= PROFILE ================= */
   .profile-stats{
@@ -555,18 +583,6 @@
       <button class="btn block" id="btn-winddown-start">Start Wind Down</button>
     </div>
 
-    <div id="winddown-session" class="winddown-session" style="display:none;">
-      <div class="winddown-video-frame">
-        <video id="winddown-video" autoplay muted loop playsinline>
-          <source src="yorick-yawn.mp4" type="video/mp4">
-        </video>
-        <div class="dim"></div>
-      </div>
-      <div class="winddown-countdown" id="winddown-countdown">10:00</div>
-      <div class="winddown-sub">Playing softly in the background — close your eyes whenever you're ready.</div>
-      <button class="btn secondary" id="btn-winddown-stop">Stop</button>
-    </div>
-
     <div id="winddown-complete" style="display:none; text-align:center;">
       <div class="result-badge win" style="margin:0 auto 10px;">🌙</div>
       <div class="result-title">Sleep well.</div>
@@ -607,6 +623,25 @@
 <div class="reels-overlay" id="reels-overlay">
   <button class="reels-close" id="reels-close">✕</button>
   <div class="reels-scroller" id="reels-scroller"></div>
+</div>
+
+<!-- ============ WIND DOWN FULLSCREEN OVERLAY ============ -->
+<div class="winddown-fullscreen" id="winddown-fullscreen">
+  <video id="winddown-video" autoplay muted loop playsinline>
+    <source src="yorick-yawn.mp4" type="video/mp4">
+  </video>
+  <div class="wd-dim"></div>
+  <div class="wd-top">
+    <div class="wd-countdown" id="winddown-countdown">10:00</div>
+    <div class="wd-sub">Playing softly — close your eyes whenever you're ready.</div>
+  </div>
+  <button class="btn lose wd-stop-btn" id="btn-winddown-stop">Stop</button>
+</div>
+
+<!-- ============ PERSISTENT SOUND BAR ============ -->
+<div class="sound-mini-bar" id="sound-mini-bar" style="display:none;">
+  <span id="sound-mini-label">Now playing: Rain</span>
+  <button class="mini-stop-btn" id="sound-mini-stop">Stop Sound</button>
 </div>
 
 <!-- ============ BOTTOM NAV ============ -->
@@ -877,7 +912,23 @@
     const cur = SoundEngine.current();
     tag.textContent = cur ? ("Now playing: " + cur.charAt(0).toUpperCase() + cur.slice(1)) : "";
     document.getElementById("sound-volume-row").style.display = cur ? "flex" : "none";
+    updateSoundMiniBar();
   }
+
+  function updateSoundMiniBar(){
+    const bar = document.getElementById("sound-mini-bar");
+    const cur = SoundEngine.current();
+    if(cur){
+      bar.style.display = "flex";
+      document.getElementById("sound-mini-label").textContent = "Now playing: " + cur.charAt(0).toUpperCase() + cur.slice(1);
+    } else {
+      bar.style.display = "none";
+    }
+  }
+  document.getElementById("sound-mini-stop").addEventListener("click", () => {
+    SoundEngine.stop();
+    syncSoundCardHighlight();
+  });
 
   document.querySelectorAll(".sound-card").forEach(card => {
     card.addEventListener("click", () => {
@@ -1272,9 +1323,7 @@
   }
 
   document.getElementById("btn-winddown-start").addEventListener("click", () => {
-    document.getElementById("winddown-setup").style.display = "none";
     document.getElementById("winddown-complete").style.display = "none";
-    document.getElementById("winddown-session").style.display = "flex";
 
     winddownRemaining = winddownMinutes * 60;
     document.getElementById("winddown-countdown").textContent = formatMMSS(winddownRemaining);
@@ -1287,6 +1336,9 @@
     const winddownVideo = document.getElementById("winddown-video");
     winddownVideo.currentTime = 0;
     winddownVideo.play().catch(()=>{});
+
+    document.getElementById("winddown-fullscreen").classList.add("active");
+    document.body.style.overflow = "hidden";
 
     winddownHandle = setInterval(() => {
       winddownRemaining -= 1;
@@ -1302,7 +1354,9 @@
     SoundEngine.stop();
     syncSoundCardHighlight();
     document.getElementById("winddown-video").pause();
-    document.getElementById("winddown-session").style.display = "none";
+    document.getElementById("winddown-fullscreen").classList.remove("active");
+    document.body.style.overflow = "";
+    document.getElementById("winddown-setup").style.display = "none";
     document.getElementById("winddown-complete").style.display = "block";
   }
 
