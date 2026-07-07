@@ -162,6 +162,58 @@
     color:rgba(247,243,234,0.6); background:var(--panel);
   }
 
+  .fab-record{
+    position:fixed;
+    right: max(20px, calc(50vw - 240px));
+    bottom: calc(var(--nav-h) + 20px);
+    width:58px; height:58px; border-radius:50%;
+    background: linear-gradient(135deg, var(--yellow), #ffe08a);
+    color:var(--ink); font-family:var(--font-display); font-size:30px;
+    border:none; box-shadow:0 10px 22px rgba(255,217,102,0.4);
+    cursor:pointer; z-index:35;
+    display:flex; align-items:center; justify-content:center;
+    line-height:1;
+  }
+
+  .record-overlay{
+    position:fixed; inset:0; background:#000; z-index:56; display:none;
+  }
+  .record-overlay.active{ display:block; }
+  .record-stage{
+    position:relative; width:100%; height:100%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .record-stage video{ width:100%; height:100%; object-fit:cover; }
+  #record-preview{ transform:scaleX(-1); }
+  .record-timer{
+    position:absolute; top:30px; left:50%; transform:translateX(-50%);
+    font-family:var(--font-display); font-size:22px; color:var(--coral);
+    background:rgba(0,0,0,0.5); padding:6px 16px; border-radius:999px;
+  }
+  .record-hint{
+    position:absolute; top:80px; left:20px; right:20px; text-align:center;
+    font-size:13px; color:rgba(247,243,234,0.85); text-shadow:0 2px 8px rgba(0,0,0,0.6);
+  }
+  .record-btn{
+    position:absolute; bottom:40px; left:50%; transform:translateX(-50%);
+    width:76px; height:76px; border-radius:50%;
+    background:rgba(255,255,255,0.15); border:4px solid var(--cream);
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .record-btn span{
+    width:56px; height:56px; border-radius:50%; background:var(--coral);
+    transition: border-radius .15s ease, width .15s ease, height .15s ease;
+  }
+  .record-btn.recording span{
+    width:28px; height:28px; border-radius:8px;
+  }
+  .record-review-actions{
+    position:absolute; bottom:30px; left:20px; right:20px;
+    display:flex; flex-direction:column; gap:10px; align-items:stretch;
+  }
+  .record-review-actions .name-input{ background:rgba(0,0,0,0.55); }
+  .record-review-actions .btn-row{ display:flex; gap:10px; }
+
   /* ---- Reels overlay ---- */
   .reels-overlay{
     position:fixed; inset:0; background:#000; z-index:50;
@@ -414,6 +466,7 @@
       <p class="sub">Tap any video, then scroll up for the next one — like a reel feed.</p>
     </div>
     <div class="video-grid" id="video-grid"></div>
+    <button class="fab-record" id="btn-open-record">+</button>
   </section>
 
   <!-- ============ SLEEP SOUNDS ============ -->
@@ -625,6 +678,29 @@
   <div class="reels-scroller" id="reels-scroller"></div>
 </div>
 
+<!-- ============ RECORD OVERLAY ============ -->
+<div class="record-overlay" id="record-overlay">
+  <button class="reels-close" id="record-close">✕</button>
+
+  <div class="record-stage" id="record-stage-live">
+    <video id="record-preview" autoplay muted playsinline></video>
+    <div class="record-timer" id="record-timer" style="display:none;">00:00</div>
+    <div class="record-hint" id="record-hint">Record your own yawn — up to 12 seconds.</div>
+    <button class="record-btn" id="btn-record-toggle"><span></span></button>
+  </div>
+
+  <div class="record-stage" id="record-stage-review" style="display:none;">
+    <video id="record-playback" playsinline loop></video>
+    <div class="record-review-actions">
+      <input type="text" id="record-label" class="name-input" placeholder="Give it a title (optional)" maxlength="24" style="margin:0;">
+      <div class="btn-row">
+        <button class="btn secondary" id="btn-record-retake">Retake</button>
+        <button class="btn win" id="btn-record-save">Add to Feed</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ WIND DOWN FULLSCREEN OVERLAY ============ -->
 <div class="winddown-fullscreen" id="winddown-fullscreen">
   <video id="winddown-video" autoplay muted loop playsinline>
@@ -721,7 +797,13 @@
   // =========================================================
   // Add more entries here as you add more yawning clips to the same folder.
   const VIDEO_LIBRARY = [
-    { id:"v1", label:"Deep Yawn", src:"yorick-yawn.mp4" }
+    { id:"v1", label:"Deep Yawn", src:"yorick-yawn.mp4" },
+    { id:"v2", label:"Big Stretch Yawn", src:"girl-yawning-1.mp4" },
+    { id:"v3", label:"Sleepy Yawn", src:"girl-yawning-2.mp4" },
+    { id:"v4", label:"Morning Yawn", src:"stock-yawn-1.mp4" },
+    { id:"v5", label:"Tired Yawn", src:"stock-yawn-2.mp4" },
+    { id:"v6", label:"Contagious Yawn", src:"stock-yawn-3.mp4" },
+    { id:"v7", label:"Late Night Yawn", src:"stock-yawn-4.mp4" },
   ];
 
   function renderVideoGrid(){
@@ -730,8 +812,9 @@
     VIDEO_LIBRARY.forEach((item, idx) => {
       const card = document.createElement("div");
       card.className = "video-card";
+      const mime = item.userRecorded ? "video/webm" : "video/mp4";
       card.innerHTML =
-        '<video muted loop playsinline autoplay><source src="' + item.src + '" type="video/mp4"></video>' +
+        '<video muted loop playsinline autoplay><source src="' + item.src + '" type="' + mime + '"></video>' +
         '<div class="play-badge">▶</div>' +
         '<div class="card-label">' + item.label + '</div>';
       card.addEventListener("click", () => openReels(idx));
@@ -752,8 +835,9 @@
     VIDEO_LIBRARY.forEach(item => {
       const slide = document.createElement("div");
       slide.className = "reel-slide";
+      const mime = item.userRecorded ? "video/webm" : "video/mp4";
       slide.innerHTML =
-        '<video muted loop playsinline><source src="' + item.src + '" type="video/mp4"></video>' +
+        '<video muted loop playsinline><source src="' + item.src + '" type="' + mime + '"></video>' +
         '<div class="reel-caption">' + item.label + '</div>';
       scroller.appendChild(slide);
     });
@@ -798,6 +882,175 @@
   document.getElementById("reels-close").addEventListener("click", closeReels);
 
   renderVideoGrid();
+  loadUserRecordings().then(renderVideoGrid);
+
+  // =========================================================
+  // FAB RECORDER — record your own yawn, saved via IndexedDB
+  // =========================================================
+  const DB_NAME = "yawn_user_videos";
+  const STORE_NAME = "clips";
+
+  function openVideoDB(){
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        req.result.createObjectStore(STORE_NAME, { keyPath:"id", autoIncrement:true });
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function loadUserRecordings(){
+    try{
+      const db = await openVideoDB();
+      const tx = db.transaction(STORE_NAME, "readonly");
+      const store = tx.objectStore(STORE_NAME);
+      const all = await new Promise((resolve, reject) => {
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      all.forEach(rec => {
+        const url = URL.createObjectURL(rec.blob);
+        VIDEO_LIBRARY.push({ id:"user-"+rec.id, label: rec.label || "Your Yawn", src:url, userRecorded:true });
+      });
+    }catch(e){
+      console.warn("Could not load saved recordings:", e);
+    }
+  }
+
+  async function saveRecording(blob, label){
+    const db = await openVideoDB();
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    const id = await new Promise((resolve, reject) => {
+      const req = store.add({ blob, label, createdAt: Date.now() });
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    const url = URL.createObjectURL(blob);
+    VIDEO_LIBRARY.push({ id:"user-"+id, label: label || "Your Yawn", src:url, userRecorded:true });
+    renderVideoGrid();
+  }
+
+  let recordStream = null;
+  let mediaRecorder = null;
+  let recordedChunks = [];
+  let recordTimerHandle = null;
+  let recordSeconds = 0;
+  const MAX_RECORD_SECONDS = 12;
+  let pendingBlob = null;
+
+  function pickMimeType(){
+    const candidates = ["video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"];
+    for(const c of candidates){
+      if(window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(c)) return c;
+    }
+    return "";
+  }
+
+  async function openRecordOverlay(){
+    document.getElementById("record-overlay").classList.add("active");
+    document.getElementById("record-stage-live").style.display = "flex";
+    document.getElementById("record-stage-review").style.display = "none";
+    document.body.style.overflow = "hidden";
+    const hint = document.getElementById("record-hint");
+    hint.textContent = "Record your own yawn — up to " + MAX_RECORD_SECONDS + " seconds.";
+    try{
+      recordStream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:"user" }, audio:true });
+      document.getElementById("record-preview").srcObject = recordStream;
+    }catch(err){
+      hint.textContent = "Camera access failed — check your browser's permission settings and try again.";
+    }
+  }
+
+  function closeRecordOverlay(){
+    document.getElementById("record-overlay").classList.remove("active");
+    document.body.style.overflow = "";
+    if(recordStream){
+      recordStream.getTracks().forEach(t => t.stop());
+      recordStream = null;
+    }
+    clearInterval(recordTimerHandle);
+    recordSeconds = 0;
+    document.getElementById("btn-record-toggle").classList.remove("recording");
+    document.getElementById("record-timer").style.display = "none";
+  }
+
+  function startRecording(){
+    if(!recordStream) return;
+    recordedChunks = [];
+    const mimeType = pickMimeType();
+    try{
+      mediaRecorder = mimeType ? new MediaRecorder(recordStream, { mimeType }) : new MediaRecorder(recordStream);
+    }catch(e){
+      document.getElementById("record-hint").textContent = "Recording isn't supported in this browser.";
+      return;
+    }
+    mediaRecorder.ondataavailable = e => { if(e.data && e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      pendingBlob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || "video/webm" });
+      showReview(pendingBlob);
+    };
+    mediaRecorder.start();
+
+    document.getElementById("btn-record-toggle").classList.add("recording");
+    document.getElementById("record-hint").style.display = "none";
+    document.getElementById("record-timer").style.display = "block";
+    recordSeconds = 0;
+    document.getElementById("record-timer").textContent = "00:0" + recordSeconds;
+    recordTimerHandle = setInterval(() => {
+      recordSeconds++;
+      const mm = String(Math.floor(recordSeconds/60)).padStart(2,"0");
+      const ss = String(recordSeconds%60).padStart(2,"0");
+      document.getElementById("record-timer").textContent = mm + ":" + ss;
+      if(recordSeconds >= MAX_RECORD_SECONDS){
+        stopRecording();
+      }
+    }, 1000);
+  }
+
+  function stopRecording(){
+    clearInterval(recordTimerHandle);
+    if(mediaRecorder && mediaRecorder.state !== "inactive"){
+      mediaRecorder.stop();
+    }
+    document.getElementById("btn-record-toggle").classList.remove("recording");
+    document.getElementById("record-timer").style.display = "none";
+  }
+
+  function showReview(blob){
+    document.getElementById("record-stage-live").style.display = "none";
+    document.getElementById("record-stage-review").style.display = "flex";
+    const playback = document.getElementById("record-playback");
+    playback.src = URL.createObjectURL(blob);
+    playback.play().catch(()=>{});
+  }
+
+  document.getElementById("btn-open-record").addEventListener("click", openRecordOverlay);
+  document.getElementById("record-close").addEventListener("click", closeRecordOverlay);
+  document.getElementById("btn-record-toggle").addEventListener("click", () => {
+    if(mediaRecorder && mediaRecorder.state === "recording"){
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  });
+  document.getElementById("btn-record-retake").addEventListener("click", () => {
+    pendingBlob = null;
+    document.getElementById("record-stage-review").style.display = "none";
+    document.getElementById("record-stage-live").style.display = "flex";
+    document.getElementById("record-hint").style.display = "block";
+  });
+  document.getElementById("btn-record-save").addEventListener("click", async () => {
+    if(!pendingBlob) return;
+    const label = document.getElementById("record-label").value.trim();
+    await saveRecording(pendingBlob, label);
+    document.getElementById("record-label").value = "";
+    pendingBlob = null;
+    closeRecordOverlay();
+  });
 
   // =========================================================
   // SOUND ENGINE (procedural rain / river / fan via Web Audio)
