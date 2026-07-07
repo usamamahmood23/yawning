@@ -376,11 +376,11 @@
   let stats = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"bestTime":0,"bestLevel":0,"winStreak":0,"attempts":0}');
 
   const LEVELS = [
-    { time: 15, mouthThreshold: 0.55, sustainFrames: 14 },
-    { time: 12, mouthThreshold: 0.50, sustainFrames: 12 },
-    { time: 10, mouthThreshold: 0.47, sustainFrames: 10 },
-    { time: 8,  mouthThreshold: 0.44, sustainFrames: 9  },
-    { time: 6,  mouthThreshold: 0.42, sustainFrames: 8  },
+    { time: 15, compositeThreshold: 0.72, sustainFrames: 10 },
+    { time: 12, compositeThreshold: 0.66, sustainFrames: 9  },
+    { time: 10, compositeThreshold: 0.60, sustainFrames: 8  },
+    { time: 8,  compositeThreshold: 0.55, sustainFrames: 7  },
+    { time: 6,  compositeThreshold: 0.50, sustainFrames: 6  },
   ];
   let currentLevelIndex = 0;
   let roundStartTs = 0;
@@ -390,6 +390,7 @@
   let openFrameCount = 0;
   let roundActive = false;
   let activeChallenge = null; // { name, levelIndex, time }
+  let baseline = null; // { mar, ear, jaw } captured per-player at round start
 
   // ---------- Screen helpers ----------
   function showScreen(id){
@@ -422,38 +423,101 @@
     await video.play();
   }
 
-  // ---------- Mouth Aspect Ratio ----------
+  // ---------- Facial feature extraction ----------
   function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
-  function mouthAspectRatio(landmarks){
-    const pts = landmarks.positions;
+
+  function mouthAspectRatio(pts){
     // inner mouth points are indices 60-67 in the 68-point model
-    const p60 = pts[60], p61 = pts[61], p62 = pts[62], p63 = pts[63],
-          p64 = pts[64], p65 = pts[65], p66 = pts[66], p67 = pts[67];
-    const vertical = dist(p61,p67) + dist(p62,p66) + dist(p63,p65);
-    const horizontal = 2 * dist(p60,p64);
+    const vertical = dist(pts[61],pts[67]) + dist(pts[62],pts[66]) + dist(pts[63],pts[65]);
+    const horizontal = 2 * dist(pts[60],pts[64]);
     if(horizontal === 0) return 0;
     return vertical / horizontal;
+  }
+  function eyeAspectRatio(pts, idx){
+    // idx = [outerCorner, top1, top2, innerCorner, bottom2, bottom1]
+    const vertical = dist(pts[idx[1]],pts[idx[5]]) + dist(pts[idx[2]],pts[idx[4]]);
+    const horizontal = 2 * dist(pts[idx[0]],pts[idx[3]]);
+    if(horizontal === 0) return 0;
+    return vertical / horizontal;
+  }
+  const RIGHT_EYE = [36,37,38,39,40,41];
+  const LEFT_EYE  = [42,43,44,45,46,47];
+  function avgEyeAspectRatio(pts){
+    return (eyeAspectRatio(pts, RIGHT_EYE) + eyeAspectRatio(pts, LEFT_EYE)) / 2;
+  }
+  function jawDropRatio(pts){
+    // chin (8) distance from the eye line, normalized by face width — proxy for jaw
+    // lowering / head tilting back, since we don't have real 3D head pose here.
+    const eyeMidY = (pts[36].y + pts[45].y) / 2;
+    const faceWidth = dist(pts[0], pts[16]) || 1;
+    return (pts[8].y - eyeMidY) / faceWidth;
+  }
+
+  function extractFeatures(landmarks){
+    const pts = landmarks.positions;
+    return { mar: mouthAspectRatio(pts), ear: avgEyeAspectRatio(pts), jaw: jawDropRatio(pts) };
+  }
+
+  // ---------- Calibration (per-player neutral face baseline) ----------
+  async function calibrateBaseline(){
+    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.35 });
+    const samples = [];
+    const sampleAttempts = 8;
+    for(let i = 0; i < sampleAttempts; i++){
+      const result = await faceapi.detectSingleFace(video, options).withFaceLandmarks(true);
+      if(result && result.landmarks){
+        samples.push(extractFeatures(result.landmarks));
+      }
+      await new Promise(r => setTimeout(r, 180));
+    }
+    if(samples.length === 0){
+      // fallback defaults if we never saw a face during calibration
+      baseline = { mar: 0.18, ear: 0.27, jaw: 0.55 };
+      return;
+    }
+    const avg = (key) => samples.reduce((s,v) => s+v[key], 0) / samples.length;
+    baseline = { mar: avg("mar"), ear: avg("ear"), jaw: avg("jaw") };
+  }
+
+  function clamp01(v){ return Math.max(0, Math.min(1.4, v)); }
+
+  function compositeYawnScore(features){
+    // Mouth: how much wider open than baseline, scaled toward 1 as it approaches
+    // a fully-open yawn mouth (baseline + ~0.45 MAR is a strong open mouth).
+    const mouthScore = clamp01((features.mar - baseline.mar) / 0.45);
+    // Eyes: yawns almost always bring squinting/closure, so a drop in EAR below
+    // baseline pushes this score up.
+    const eyeScore = clamp01((baseline.ear - features.ear) / 0.14);
+    // Jaw: chin dropping further from the eye-line than baseline, normalized —
+    // stands in for jaw lowering / head tilting back.
+    const jawScore = clamp01((features.jaw - baseline.jaw) / 0.22);
+
+    return (0.5 * mouthScore) + (0.32 * eyeScore) + (0.18 * jawScore);
   }
 
   // ---------- Detection loop ----------
   async function detectLoop(){
     if(!roundActive) return;
     const level = LEVELS[currentLevelIndex];
-    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 });
+    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.35 });
     const result = await faceapi.detectSingleFace(video, options).withFaceLandmarks(true);
 
-    let mar = 0;
-    if(result && result.landmarks){
-      mar = mouthAspectRatio(result.landmarks);
+    let score = 0;
+    if(result && result.landmarks && baseline){
+      score = compositeYawnScore(extractFeatures(result.landmarks));
     }
 
-    const meterPct = Math.max(4, Math.min(100, Math.round((mar / (level.mouthThreshold * 1.3)) * 100)));
+    const meterPct = Math.max(4, Math.min(100, Math.round((score / level.compositeThreshold) * 100)));
     document.getElementById("meter-fill").style.height = meterPct + "%";
 
-    if(mar > level.mouthThreshold){
+    if(score > level.compositeThreshold){
       openFrameCount++;
     } else {
-      openFrameCount = Math.max(0, openFrameCount - 1);
+      // Fast reset (not a slow decay): a real yawn holds the open/squint state
+      // continuously, while talking or a quick face movement drops back down
+      // right away — this is what tells the two apart without waiting out
+      // the full multi-second length of an actual yawn.
+      openFrameCount = Math.max(0, openFrameCount - 3);
     }
 
     if(openFrameCount >= level.sustainFrames){
@@ -474,13 +538,14 @@
     updateLevelTag();
     const level = LEVELS[currentLevelIndex];
     document.getElementById("timer-num").textContent = level.time;
-    document.getElementById("status-line").textContent = "Round starts in 3…";
+    document.getElementById("status-line").textContent = "Reading your neutral face…";
     openFrameCount = 0;
     roundActive = false;
+    baseline = null;
 
     let countdown = 3;
     const statusEl = document.getElementById("status-line");
-    await new Promise(resolve => {
+    const countdownPromise = new Promise(resolve => {
       const iv = setInterval(() => {
         countdown--;
         if(countdown <= 0){
@@ -491,6 +556,10 @@
         }
       }, 700);
     });
+
+    // Calibrate against this specific player's neutral face while the
+    // countdown plays, so detection thresholds aren't one-size-fits-all.
+    await Promise.all([countdownPromise, calibrateBaseline()]);
 
     statusEl.textContent = "Don't yawn. Yorick is watching you back.";
     roundActive = true;
