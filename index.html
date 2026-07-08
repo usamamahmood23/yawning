@@ -162,6 +162,18 @@
     color:rgba(247,243,234,0.6); background:var(--panel);
   }
 
+  .profile-corner-btn{
+    position:fixed;
+    top:16px;
+    right: max(20px, calc(50vw - 240px));
+    width:40px; height:40px; border-radius:50%;
+    background:var(--panel); border:1px solid var(--line);
+    color:var(--cream);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; z-index:36;
+  }
+  .profile-corner-btn svg{ width:20px; height:20px; }
+
   .fab-record{
     position:fixed;
     right: max(20px, calc(50vw - 240px));
@@ -415,6 +427,74 @@
   .profile-stat-box .num{ font-family:var(--font-display); font-size:24px; color:var(--yellow); }
   .profile-stat-box .cap{ font-size:11.5px; color:rgba(247,243,234,0.6); margin-top:2px; text-transform:uppercase; letter-spacing:.04em; }
 
+  /* ================= SLEEP LOG ================= */
+  .log-stats-row{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:4px;
+  }
+  .log-stats-row .profile-stat-box{ padding:12px 6px; }
+  .log-stats-row .num{ font-size:17px; }
+  .log-stats-row .cap{ font-size:9.5px; }
+
+  .chart-row{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:8px;
+    height:120px; padding:0 4px;
+  }
+  .chart-bar-col{ display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; height:100%; justify-content:flex-end; }
+  .chart-bar{
+    width:100%; max-width:26px; border-radius:8px 8px 4px 4px;
+    background:linear-gradient(180deg, var(--yellow), var(--coral));
+    min-height:4px;
+  }
+  .chart-bar.empty{ background:rgba(247,243,234,0.12); }
+  .chart-bar-label{ font-size:10px; color:rgba(247,243,234,0.55); }
+
+  .log-field-label{
+    display:block; font-size:12.5px; color:rgba(247,243,234,0.75);
+    margin:16px 0 8px; font-weight:600;
+  }
+  .log-field-label:first-of-type{ margin-top:2px; }
+  .log-field-hint{ font-weight:400; color:rgba(247,243,234,0.45); font-size:11.5px; }
+
+  .log-input{
+    width:100%; background:var(--ink-2); border:1px solid var(--line); border-radius:12px;
+    padding:12px 14px; color:var(--cream); font-family:var(--font-body); font-size:14px;
+  }
+  .log-input:focus{ outline:2px solid var(--yellow); }
+  .log-time-row{ display:flex; gap:12px; }
+  .log-time-col{ flex:1; }
+  .log-duration-display{
+    text-align:center; font-family:var(--font-display); color:var(--yellow);
+    font-size:15px; margin-top:10px;
+  }
+  .log-textarea{ min-height:70px; resize:vertical; font-family:var(--font-body); }
+
+  .log-form-panel .chip-row{ margin:0; }
+  .log-form-panel .btn.block{ margin-top:22px; }
+  .log-saved-tag{
+    text-align:center; color:var(--mint); font-family:var(--font-display);
+    font-size:13.5px; margin-top:10px;
+  }
+
+  .log-entry-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:14px 16px; margin-bottom:10px;
+  }
+  .log-entry-top{ display:flex; justify-content:space-between; align-items:center; }
+  .log-entry-date{ font-family:var(--font-display); font-size:14.5px; color:var(--cream); }
+  .log-entry-duration{ font-size:13px; color:var(--yellow); font-weight:600; }
+  .log-entry-delete{
+    background:none; border:none; color:rgba(247,243,234,0.4);
+    font-size:15px; cursor:pointer; padding:2px 6px;
+  }
+  .log-entry-meta{ font-size:12px; color:rgba(247,243,234,0.6); margin-top:4px; }
+  .log-entry-tags{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .log-entry-tag{
+    font-size:10.5px; background:rgba(255,217,102,0.12); color:var(--yellow);
+    border-radius:999px; padding:3px 10px;
+  }
+  .log-entry-notes{ font-size:12.5px; color:rgba(247,243,234,0.65); margin-top:8px; font-style:italic; }
+  .log-empty-state{ text-align:center; color:rgba(247,243,234,0.5); font-size:13px; padding:20px 0; }
+
   /* ================= BOTTOM NAV ================= */
   .bottom-nav{
     position:fixed; bottom:0; left:50%; transform:translateX(-50%);
@@ -428,10 +508,10 @@
   }
   .nav-item{
     background:none; border:none; color:rgba(247,243,234,0.5);
-    display:flex; flex-direction:column; align-items:center; gap:3px;
-    font-size:10.5px; cursor:pointer; flex:1; padding:6px 2px;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    font-size:9.5px; cursor:pointer; flex:1; padding:6px 1px;
   }
-  .nav-item svg{ width:22px; height:22px; }
+  .nav-item svg{ width:19px; height:19px; }
   .nav-item.active{ color:var(--yellow); }
   .nav-center{ position:relative; flex:1; }
   .nav-center-circle{
@@ -444,7 +524,7 @@
   }
   .nav-center-circle svg{ width:26px; height:26px; color:#1B1B3A; }
   .nav-center .nav-item-label{
-    margin-top:32px; display:block; font-size:10.5px;
+    margin-top:30px; display:block; font-size:9.5px;
   }
   .nav-center.active .nav-center-circle{ box-shadow: 0 8px 22px rgba(255,217,102,0.5); }
   .nav-center.active{ color:var(--yellow); }
@@ -458,6 +538,10 @@
 
 <div class="app-shell">
 
+  <button class="profile-corner-btn" id="btn-open-profile" aria-label="Profile">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+  </button>
+
   <!-- ============ HOME ============ -->
   <section class="tab-view active" id="view-home">
     <div class="section-header">
@@ -467,6 +551,102 @@
     </div>
     <div class="video-grid" id="video-grid"></div>
     <button class="fab-record" id="btn-open-record">+</button>
+  </section>
+
+  <!-- ============ SLEEP LOG ============ -->
+  <section class="tab-view" id="view-sleeplog">
+    <div class="section-header">
+      <div class="eyebrow">Track</div>
+      <h1>Sleep Log</h1>
+      <p class="sub">Log last night, spot patterns over time.</p>
+    </div>
+
+    <div class="log-stats-row">
+      <div class="profile-stat-box"><div class="num" id="log-stat-avg-duration">0h 0m</div><div class="cap">Avg Duration</div></div>
+      <div class="profile-stat-box"><div class="num" id="log-stat-avg-quality">—</div><div class="cap">Avg Quality</div></div>
+      <div class="profile-stat-box"><div class="num" id="log-stat-streak">0</div><div class="cap">Day Streak</div></div>
+      <div class="profile-stat-box"><div class="num" id="log-stat-total">0</div><div class="cap">Nights Logged</div></div>
+    </div>
+
+    <div class="panel" style="margin:16px 0;">
+      <div class="meter-label" style="text-align:center;margin-bottom:10px;">Last 7 Days</div>
+      <div class="chart-row" id="log-chart-row"></div>
+    </div>
+
+    <div class="panel log-form-panel">
+      <div class="meter-label" style="text-align:center;margin-bottom:10px;">Log a Night's Sleep</div>
+
+      <label class="log-field-label" for="log-date">Date</label>
+      <input type="date" id="log-date" class="log-input">
+
+      <div class="log-time-row">
+        <div class="log-time-col">
+          <label class="log-field-label" for="log-bedtime">Bedtime</label>
+          <input type="time" id="log-bedtime" class="log-input" value="23:00">
+        </div>
+        <div class="log-time-col">
+          <label class="log-field-label" for="log-wake">Wake Time</label>
+          <input type="time" id="log-wake" class="log-input" value="07:00">
+        </div>
+      </div>
+      <div class="log-duration-display" id="log-duration-display">Total: 8h 0m asleep</div>
+
+      <div class="log-field-label">Sleep Quality</div>
+      <div class="chip-row" id="log-quality-chips">
+        <button class="chip" data-quality="1">Poor</button>
+        <button class="chip" data-quality="2">Fair</button>
+        <button class="chip active" data-quality="3">Good</button>
+        <button class="chip" data-quality="4">Great</button>
+        <button class="chip" data-quality="5">Excellent</button>
+      </div>
+
+      <div class="log-field-label">Time to Fall Asleep</div>
+      <div class="chip-row" id="log-latency-chips">
+        <button class="chip active" data-latency="under15">&lt;15 min</button>
+        <button class="chip" data-latency="15to30">15–30 min</button>
+        <button class="chip" data-latency="30to60">30–60 min</button>
+        <button class="chip" data-latency="over60">60+ min</button>
+      </div>
+
+      <div class="log-field-label">Times Woken During the Night</div>
+      <div class="chip-row" id="log-wakecount-chips">
+        <button class="chip active" data-wakecount="0">0</button>
+        <button class="chip" data-wakecount="1">1</button>
+        <button class="chip" data-wakecount="2">2</button>
+        <button class="chip" data-wakecount="3">3+</button>
+      </div>
+
+      <div class="log-field-label">Morning Mood</div>
+      <div class="chip-row" id="log-mood-chips">
+        <button class="chip active" data-mood="refreshed">Refreshed</button>
+        <button class="chip" data-mood="neutral">Neutral</button>
+        <button class="chip" data-mood="groggy">Groggy</button>
+        <button class="chip" data-mood="tired">Tired</button>
+        <button class="chip" data-mood="anxious">Anxious</button>
+      </div>
+
+      <div class="log-field-label">Possible Factors <span class="log-field-hint">(tap all that apply)</span></div>
+      <div class="chip-row" id="log-factor-chips">
+        <button class="chip" data-factor="caffeine">Caffeine</button>
+        <button class="chip" data-factor="alcohol">Alcohol</button>
+        <button class="chip" data-factor="screens">Screens Before Bed</button>
+        <button class="chip" data-factor="exercise">Exercise</button>
+        <button class="chip" data-factor="stress">Stress</button>
+        <button class="chip" data-factor="nap">Napped Today</button>
+        <button class="chip" data-factor="late-meal">Late Meal</button>
+      </div>
+
+      <div class="log-field-label">Notes <span class="log-field-hint">(optional)</span></div>
+      <textarea id="log-notes" class="log-input log-textarea" placeholder="Anything else worth remembering about last night?"></textarea>
+
+      <button class="btn block" id="btn-log-save">Save Entry</button>
+      <div class="log-saved-tag" id="log-saved-tag" style="display:none;">Saved ✓</div>
+    </div>
+
+    <div class="log-history">
+      <div class="meter-label" style="text-align:center;margin:18px 0 10px;">History</div>
+      <div id="log-entries-list"></div>
+    </div>
   </section>
 
   <!-- ============ SLEEP SOUNDS ============ -->
@@ -740,9 +920,9 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
     Wind Down
   </button>
-  <button class="nav-item" data-tab="profile">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
-    Profile
+  <button class="nav-item" data-tab="sleeplog">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v16h16"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+    Sleep Log
   </button>
 </nav>
 
@@ -766,14 +946,17 @@
     document.querySelectorAll(".tab-view").forEach(v => v.classList.remove("active"));
     document.getElementById("view-" + tabName).classList.add("active");
     document.querySelectorAll(".nav-item").forEach(b => b.classList.remove("active"));
-    document.querySelector('.nav-item[data-tab="' + tabName + '"]').classList.add("active");
+    const navBtn = document.querySelector('.nav-item[data-tab="' + tabName + '"]');
+    if(navBtn) navBtn.classList.add("active");
     currentTab = tabName;
     if(tabName === "profile") renderProfileStats();
     if(tabName === "sleep") syncSoundCardHighlight("sound-grid-context");
+    if(tabName === "sleeplog") openSleepLogTab();
   }
   document.querySelectorAll(".nav-item").forEach(btn => {
     btn.addEventListener("click", () => switchTab(btn.dataset.tab));
   });
+  document.getElementById("btn-open-profile").addEventListener("click", () => switchTab("profile"));
 
   // =========================================================
   // SHARED NAME FIELD (Competition landing + Profile)
@@ -1637,6 +1820,286 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
     renderProfileStats();
   });
+
+  // =========================================================
+  // SLEEP LOG
+  // =========================================================
+  const LOG_STORAGE_KEY = "yawn_sleep_log_v1";
+
+  function getLogEntries(){
+    try{ return JSON.parse(localStorage.getItem(LOG_STORAGE_KEY) || "[]"); }
+    catch(e){ return []; }
+  }
+  function saveLogEntries(entries){
+    localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(entries));
+  }
+  function todayDateStr(){
+    return formatDateStr(new Date());
+  }
+  function formatDateStr(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const day = String(d.getDate()).padStart(2,"0");
+    return y + "-" + m + "-" + day;
+  }
+  function computeDurationMinutes(bedtime, wake){
+    if(!bedtime || !wake) return 0;
+    const [bh,bm] = bedtime.split(":").map(Number);
+    const [wh,wm] = wake.split(":").map(Number);
+    let bedMin = bh*60+bm;
+    let wakeMin = wh*60+wm;
+    if(wakeMin <= bedMin) wakeMin += 24*60; // overnight wrap
+    return wakeMin - bedMin;
+  }
+  function formatDuration(mins){
+    const h = Math.floor(mins/60);
+    const m = mins % 60;
+    return h + "h " + m + "m";
+  }
+  const QUALITY_LABELS = { 1:"Poor", 2:"Fair", 3:"Good", 4:"Great", 5:"Excellent" };
+  const MOOD_LABELS = { refreshed:"Refreshed", neutral:"Neutral", groggy:"Groggy", tired:"Tired", anxious:"Anxious" };
+  const LATENCY_LABELS = { under15:"<15 min to fall asleep", "15to30":"15–30 min to fall asleep", "30to60":"30–60 min to fall asleep", over60:"60+ min to fall asleep" };
+  const FACTOR_LABELS = { caffeine:"Caffeine", alcohol:"Alcohol", screens:"Screens Before Bed", exercise:"Exercise", stress:"Stress", nap:"Napped Today", "late-meal":"Late Meal" };
+
+  function bindSingleSelectChips(containerId){
+    document.querySelectorAll("#" + containerId + " .chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll("#" + containerId + " .chip").forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+        updateDurationDisplay();
+      });
+    });
+  }
+  function bindMultiSelectChips(containerId){
+    document.querySelectorAll("#" + containerId + " .chip").forEach(chip => {
+      chip.addEventListener("click", () => chip.classList.toggle("active"));
+    });
+  }
+  bindSingleSelectChips("log-quality-chips");
+  bindSingleSelectChips("log-latency-chips");
+  bindSingleSelectChips("log-wakecount-chips");
+  bindSingleSelectChips("log-mood-chips");
+  bindMultiSelectChips("log-factor-chips");
+
+  function getActiveChipValue(containerId, dataAttr){
+    const active = document.querySelector("#" + containerId + " .chip.active");
+    return active ? active.dataset[dataAttr] : null;
+  }
+  function setActiveChipValue(containerId, dataAttr, value){
+    document.querySelectorAll("#" + containerId + " .chip").forEach(chip => {
+      chip.classList.toggle("active", chip.dataset[dataAttr] === String(value));
+    });
+  }
+  function getMultiChipValues(containerId, dataAttr){
+    return Array.from(document.querySelectorAll("#" + containerId + " .chip.active")).map(c => c.dataset[dataAttr]);
+  }
+  function setMultiChipValues(containerId, dataAttr, values){
+    document.querySelectorAll("#" + containerId + " .chip").forEach(chip => {
+      chip.classList.toggle("active", values.includes(chip.dataset[dataAttr]));
+    });
+  }
+
+  function updateDurationDisplay(){
+    const bedtime = document.getElementById("log-bedtime").value;
+    const wake = document.getElementById("log-wake").value;
+    const mins = computeDurationMinutes(bedtime, wake);
+    document.getElementById("log-duration-display").textContent = "Total: " + formatDuration(mins) + " asleep";
+  }
+  document.getElementById("log-bedtime").addEventListener("input", updateDurationDisplay);
+  document.getElementById("log-wake").addEventListener("input", updateDurationDisplay);
+  document.getElementById("log-date").addEventListener("change", () => loadFormForDate(document.getElementById("log-date").value));
+
+  function resetFormDefaults(dateStr){
+    document.getElementById("log-date").value = dateStr;
+    document.getElementById("log-bedtime").value = "23:00";
+    document.getElementById("log-wake").value = "07:00";
+    document.getElementById("log-notes").value = "";
+    setActiveChipValue("log-quality-chips", "quality", "3");
+    setActiveChipValue("log-latency-chips", "latency", "under15");
+    setActiveChipValue("log-wakecount-chips", "wakecount", "0");
+    setActiveChipValue("log-mood-chips", "mood", "refreshed");
+    setMultiChipValues("log-factor-chips", "factor", []);
+    updateDurationDisplay();
+  }
+
+  function loadFormForDate(dateStr){
+    const entries = getLogEntries();
+    const existing = entries.find(e => e.date === dateStr);
+    if(existing){
+      document.getElementById("log-bedtime").value = existing.bedtime;
+      document.getElementById("log-wake").value = existing.wake;
+      document.getElementById("log-notes").value = existing.notes || "";
+      setActiveChipValue("log-quality-chips", "quality", existing.quality);
+      setActiveChipValue("log-latency-chips", "latency", existing.latency);
+      setActiveChipValue("log-wakecount-chips", "wakecount", existing.wakeCount);
+      setActiveChipValue("log-mood-chips", "mood", existing.mood);
+      setMultiChipValues("log-factor-chips", "factor", existing.factors || []);
+      updateDurationDisplay();
+    } else {
+      resetFormDefaults(dateStr);
+    }
+  }
+
+  function openSleepLogTab(){
+    const dateField = document.getElementById("log-date");
+    if(!dateField.value) dateField.value = todayDateStr();
+    loadFormForDate(dateField.value);
+    renderLogStats();
+    renderLogChart();
+    renderLogEntriesList();
+  }
+
+  document.getElementById("btn-log-save").addEventListener("click", () => {
+    const dateStr = document.getElementById("log-date").value || todayDateStr();
+    const bedtime = document.getElementById("log-bedtime").value;
+    const wake = document.getElementById("log-wake").value;
+    if(!bedtime || !wake){
+      alert("Please set both a bedtime and a wake time.");
+      return;
+    }
+    const entry = {
+      date: dateStr,
+      bedtime, wake,
+      durationMinutes: computeDurationMinutes(bedtime, wake),
+      quality: parseInt(getActiveChipValue("log-quality-chips","quality") || "3", 10),
+      latency: getActiveChipValue("log-latency-chips","latency") || "under15",
+      wakeCount: getActiveChipValue("log-wakecount-chips","wakecount") || "0",
+      mood: getActiveChipValue("log-mood-chips","mood") || "refreshed",
+      factors: getMultiChipValues("log-factor-chips","factor"),
+      notes: document.getElementById("log-notes").value.trim()
+    };
+    const entries = getLogEntries();
+    const idx = entries.findIndex(e => e.date === dateStr);
+    if(idx >= 0) entries[idx] = entry; else entries.push(entry);
+    saveLogEntries(entries);
+
+    const savedTag = document.getElementById("log-saved-tag");
+    savedTag.style.display = "block";
+    setTimeout(() => { savedTag.style.display = "none"; }, 2000);
+
+    renderLogStats();
+    renderLogChart();
+    renderLogEntriesList();
+  });
+
+  function renderLogStats(){
+    const entries = getLogEntries();
+    const last7 = last7CalendarEntries(entries);
+    const withData = last7.filter(e => e);
+    const avgDuration = withData.length
+      ? Math.round(withData.reduce((s,e) => s + e.durationMinutes, 0) / withData.length)
+      : 0;
+    const avgQuality = withData.length
+      ? (withData.reduce((s,e) => s + e.quality, 0) / withData.length)
+      : 0;
+
+    document.getElementById("log-stat-avg-duration").textContent = withData.length ? formatDuration(avgDuration) : "—";
+    document.getElementById("log-stat-avg-quality").textContent = withData.length ? avgQuality.toFixed(1) + "/5" : "—";
+    document.getElementById("log-stat-streak").textContent = computeLogStreak(entries);
+    document.getElementById("log-stat-total").textContent = entries.length;
+  }
+
+  function last7CalendarEntries(entries){
+    const byDate = {};
+    entries.forEach(e => byDate[e.date] = e);
+    const result = [];
+    for(let i = 6; i >= 0; i--){
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      result.push(byDate[formatDateStr(d)] || null);
+    }
+    return result;
+  }
+
+  function computeLogStreak(entries){
+    const byDate = {};
+    entries.forEach(e => byDate[e.date] = e);
+    let streak = 0;
+    let d = new Date();
+    // if today isn't logged yet, streak counts through yesterday
+    if(!byDate[formatDateStr(d)]) d.setDate(d.getDate()-1);
+    while(byDate[formatDateStr(d)]){
+      streak++;
+      d.setDate(d.getDate()-1);
+    }
+    return streak;
+  }
+
+  function renderLogChart(){
+    const entries = getLogEntries();
+    const last7 = last7CalendarEntries(entries);
+    const dayLabels = [];
+    for(let i = 6; i >= 0; i--){
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      dayLabels.push(d.toLocaleDateString(undefined, { weekday:"short" }).slice(0,2));
+    }
+    const maxMinutes = 600; // 10h cap for bar scaling
+    const row = document.getElementById("log-chart-row");
+    row.innerHTML = "";
+    last7.forEach((entry, i) => {
+      const col = document.createElement("div");
+      col.className = "chart-bar-col";
+      const bar = document.createElement("div");
+      if(entry){
+        const pct = Math.max(6, Math.min(100, Math.round((entry.durationMinutes / maxMinutes) * 100)));
+        bar.className = "chart-bar";
+        bar.style.height = pct + "%";
+        bar.title = formatDuration(entry.durationMinutes);
+      } else {
+        bar.className = "chart-bar empty";
+        bar.style.height = "6%";
+      }
+      const label = document.createElement("div");
+      label.className = "chart-bar-label";
+      label.textContent = dayLabels[i];
+      col.appendChild(bar);
+      col.appendChild(label);
+      row.appendChild(col);
+    });
+  }
+
+  function renderLogEntriesList(){
+    const entries = getLogEntries().slice().sort((a,b) => b.date.localeCompare(a.date));
+    const list = document.getElementById("log-entries-list");
+    list.innerHTML = "";
+    if(entries.length === 0){
+      list.innerHTML = '<div class="log-empty-state">No nights logged yet — save your first entry above.</div>';
+      return;
+    }
+    entries.slice(0, 14).forEach(entry => {
+      const card = document.createElement("div");
+      card.className = "log-entry-card";
+      const factorTags = (entry.factors || []).map(f => '<span class="log-entry-tag">' + (FACTOR_LABELS[f] || f) + '</span>').join("");
+      card.innerHTML =
+        '<div class="log-entry-top">' +
+          '<div class="log-entry-date">' + entry.date + '</div>' +
+          '<div class="log-entry-duration">' + formatDuration(entry.durationMinutes) + '</div>' +
+        '</div>' +
+        '<div class="log-entry-meta">' +
+          (QUALITY_LABELS[entry.quality] || "Good") + ' sleep · ' +
+          (MOOD_LABELS[entry.mood] || "Neutral") + ' on waking · ' +
+          'woke ' + entry.wakeCount + 'x · ' +
+          (LATENCY_LABELS[entry.latency] || "") +
+        '</div>' +
+        (factorTags ? '<div class="log-entry-tags">' + factorTags + '</div>' : "") +
+        (entry.notes ? '<div class="log-entry-notes">"' + entry.notes.replace(/</g,"&lt;") + '"</div>' : "");
+
+      const delBtn = document.createElement("button");
+      delBtn.className = "log-entry-delete";
+      delBtn.textContent = "✕";
+      delBtn.addEventListener("click", () => {
+        const remaining = getLogEntries().filter(e => e.date !== entry.date);
+        saveLogEntries(remaining);
+        renderLogStats(); renderLogChart(); renderLogEntriesList();
+        if(document.getElementById("log-date").value === entry.date){
+          loadFormForDate(entry.date);
+        }
+      });
+      card.querySelector(".log-entry-top").appendChild(delBtn);
+      list.appendChild(card);
+    });
+  }
 
 })();
 </script>
